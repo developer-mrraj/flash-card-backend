@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"fmt"
+
 	"backend/internal/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -13,6 +15,7 @@ type ProductRepository interface {
 	Update(product *models.Product) error
 	UpdateRating(id uuid.UUID, rating float64, reviews int) error
 	Delete(id uuid.UUID) error
+	DeductStock(items []models.OrderItem) error // called after confirmed payment
 }
 
 type productRepository struct {
@@ -56,4 +59,21 @@ func (r *productRepository) UpdateRating(id uuid.UUID, rating float64, reviews i
 		"rating":  rating,
 		"reviews": reviews,
 	}).Error
+}
+
+// DeductStock atomically reduces stock_quantity for each order item after payment is confirmed.
+func (r *productRepository) DeductStock(items []models.OrderItem) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		for _, item := range items {
+			result := tx.Model(&models.Product{}).Where("id = ? AND stock_quantity >= ?", item.ProductID, item.Quantity).
+				UpdateColumn("stock_quantity", gorm.Expr("stock_quantity - ?", item.Quantity))
+			if result.Error != nil {
+				return result.Error
+			}
+			if result.RowsAffected == 0 {
+				return fmt.Errorf("insufficient stock for product %s", item.ProductID)
+			}
+		}
+		return nil
+	})
 }

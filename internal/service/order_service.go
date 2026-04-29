@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"log"
+	"strings"
 
 	"backend/internal/dto"
 	"backend/internal/models"
@@ -22,10 +23,11 @@ type orderService struct {
 	orderRepo   repository.OrderRepository
 	productRepo repository.ProductRepository
 	paymentSvc  PaymentService
+	promoRepo   repository.PromoRepository
 }
 
-func NewOrderService(orderRepo repository.OrderRepository, productRepo repository.ProductRepository, paymentSvc PaymentService) OrderService {
-	return &orderService{orderRepo: orderRepo, productRepo: productRepo, paymentSvc: paymentSvc}
+func NewOrderService(orderRepo repository.OrderRepository, productRepo repository.ProductRepository, paymentSvc PaymentService, promoRepo repository.PromoRepository) OrderService {
+	return &orderService{orderRepo: orderRepo, productRepo: productRepo, paymentSvc: paymentSvc, promoRepo: promoRepo}
 }
 
 func mapToOrderResponse(o *models.Order) dto.OrderResponse {
@@ -78,8 +80,9 @@ func mapToOrderResponse(o *models.Order) dto.OrderResponse {
 func (s *orderService) CreateOrder(userID uuid.UUID, req dto.CreateOrderRequest) (*dto.OrderResponse, error) {
 	var totalAmount int64
 	var orderItems []models.OrderItem
-	var productsToUpdate []models.Product
 
+	// Validate stock and calculate total — do NOT deduct stock yet.
+	// Stock is only deducted in ProcessPaymentSuccess after confirmed payment.
 	for _, itemReq := range req.Items {
 		product, err := s.productRepo.FindByID(itemReq.ProductID)
 		if err != nil {
@@ -89,9 +92,6 @@ func (s *orderService) CreateOrder(userID uuid.UUID, req dto.CreateOrderRequest)
 		if product.StockQuantity < itemReq.Quantity {
 			return nil, errors.New("not enough stock")
 		}
-
-		product.StockQuantity -= itemReq.Quantity
-		productsToUpdate = append(productsToUpdate, *product)
 
 		itemTotal := product.Price * int64(itemReq.Quantity)
 		totalAmount += itemTotal
@@ -103,6 +103,19 @@ func (s *orderService) CreateOrder(userID uuid.UUID, req dto.CreateOrderRequest)
 		})
 	}
 
+	// Apply promo discount server-side (validates code, calculates discount)
+	var discountAmount int64
+	if code := strings.TrimSpace(req.PromoCode); code != "" {
+		promo, err := s.promoRepo.FindByCode(code)
+		if err == nil && promo != nil {
+			discountAmount = totalAmount * int64(promo.DiscountPercentage) / 100
+			totalAmount -= discountAmount
+			log.Printf("[Promo] Applied %s: -%d paise (%.0f%% of original)", promo.Code, discountAmount, float64(promo.DiscountPercentage))
+		} else {
+			log.Printf("[Promo] Code '%s' not found or expired, skipping discount", code)
+		}
+	}
+
 	order := &models.Order{
 		UserID:      userID,
 		TotalAmount: totalAmount,
@@ -110,24 +123,24 @@ func (s *orderService) CreateOrder(userID uuid.UUID, req dto.CreateOrderRequest)
 		Items:       orderItems,
 	}
 
-	err := s.orderRepo.CreateOrderTransaction(order, productsToUpdate)
-	if err != nil {
+	// Create the order record only — stock is NOT deducted here
+	if err := s.orderRepo.CreateOrderTransaction(order, nil); err != nil {
 		return nil, err
 	}
 
-	// Generate Razorpay Order
-	receipt := order.ID.String() // Max length is 40 characters in Razorpay (UUID is 36)
+	// Generate Razorpay Order with the discounted totalAmount
+	receipt := order.ID.String()
 	rzpOrderID, rzpErr := s.paymentSvc.GenerateRazorpayOrder(order.TotalAmount, receipt)
 	if rzpErr != nil {
 		log.Printf("[Razorpay] WARN: Failed to create Razorpay order for order %s: %v", order.ID, rzpErr)
 	} else if rzpOrderID != "" {
-		// Update the order in DB with Razorpay Order ID
 		s.orderRepo.UpdatePaymentDetails(order.ID, rzpOrderID, "", "pending")
 		order.RazorpayOrderID = rzpOrderID
-		log.Printf("[Razorpay] Order created: %s for order %s", rzpOrderID, order.ID)
+		log.Printf("[Razorpay] Order created: %s for order %s (amount: %d paise)", rzpOrderID, order.ID, order.TotalAmount)
 	}
 
 	res := mapToOrderResponse(order)
+	res.DiscountAmount = discountAmount
 	return &res, nil
 }
 

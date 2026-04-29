@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	_ "backend/docs" // Import swagger docs
 	"backend/internal/config"
@@ -58,8 +60,8 @@ func main() {
 	// 4. Initialize Services
 	authService := service.NewAuthService(userRepo, cfg)
 	productService := service.NewProductService(productRepo, reviewRepo)
-	paymentService := service.NewPaymentService(cfg, paymentRepo, orderRepo)
-	orderService := service.NewOrderService(orderRepo, productRepo, paymentService)
+	paymentService := service.NewPaymentService(cfg, paymentRepo, orderRepo, productRepo)
+	orderService := service.NewOrderService(orderRepo, productRepo, paymentService, promoRepo)
 
 	// 5. Initialize Handlers
 	authHandler := handlers.NewAuthHandler(authService)
@@ -87,6 +89,15 @@ func main() {
 
 	// 7. Register Routes
 	routes.RegisterRoutes(r, cfg, authHandler, productHandler, orderHandler, paymentHandler, addressHandler, promoHandler, leadHandler)
+
+	// 8. Serve static product images from ./static/ directory
+	staticDir := filepath.Join(".", "static")
+	if err := os.MkdirAll(staticDir, 0755); err != nil {
+		log.Printf("[Static] Could not create static dir: %v", err)
+	} else {
+		r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
+		log.Printf("[Static] Serving images from %s at /static/", staticDir)
+	}
 
 	// 8. Start Server
 	log.Printf("Starting server on port %s...", cfg.Port)

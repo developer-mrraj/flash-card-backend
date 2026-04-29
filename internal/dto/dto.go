@@ -79,7 +79,8 @@ type OrderItemRequest struct {
 }
 
 type CreateOrderRequest struct {
-	Items []OrderItemRequest `json:"items" binding:"required,dive"`
+	Items     []OrderItemRequest `json:"items" binding:"required,dive"`
+	PromoCode string             `json:"promo_code"` // optional; validated server-side
 }
 
 type UpdateOrderStatusRequest struct {
@@ -87,15 +88,16 @@ type UpdateOrderStatusRequest struct {
 }
 
 type OrderResponse struct {
-	ID              uuid.UUID             `json:"id"`
-	UserID          uuid.UUID             `json:"user_id"`
-	User            *UserResponse         `json:"user,omitempty"`
-	TotalAmount     int64                 `json:"total_amount"`
-	Status          string                `json:"status"`
-	RazorpayOrderID string                `json:"razorpay_order_id,omitempty"`
-	Items           []OrderItemResponse   `json:"items"`
-	CreatedAt       time.Time             `json:"created_at"`
-	UpdatedAt       time.Time             `json:"updated_at"`
+	ID              uuid.UUID           `json:"id"`
+	UserID          uuid.UUID           `json:"user_id"`
+	User            *UserResponse       `json:"user,omitempty"`
+	TotalAmount     int64               `json:"total_amount"`               // final charged amount (after promo)
+	DiscountAmount  int64               `json:"discount_amount,omitempty"`  // how much was discounted
+	Status          string              `json:"status"`
+	RazorpayOrderID string              `json:"razorpay_order_id,omitempty"`
+	Items           []OrderItemResponse `json:"items"`
+	CreatedAt       time.Time           `json:"created_at"`
+	UpdatedAt       time.Time           `json:"updated_at"`
 }
 
 type OrderItemResponse struct {

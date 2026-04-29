@@ -27,6 +27,7 @@ func NewOrderRepository(db *gorm.DB) OrderRepository {
 
 func (r *orderRepository) CreateOrderTransaction(order *models.Order, updates []models.Product) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
+		// updates is nil when stock deduction is deferred to payment confirmation
 		for _, product := range updates {
 			if err := tx.Save(&product).Error; err != nil {
 				return err
@@ -85,7 +86,7 @@ func (r *orderRepository) UpdatePaymentDetails(id uuid.UUID, rzpOrderID string, 
 
 func (r *orderRepository) FindByRazorpayOrderID(rzpOrderID string) (*models.Order, error) {
 	var order models.Order
-	if err := r.db.Where("razorpay_order_id = ?", rzpOrderID).First(&order).Error; err != nil {
+	if err := r.db.Preload("Items").Where("razorpay_order_id = ?", rzpOrderID).First(&order).Error; err != nil {
 		return nil, err
 	}
 	return &order, nil

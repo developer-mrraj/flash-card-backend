@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 
 	"backend/internal/config"
 	"backend/internal/models"
@@ -24,16 +25,18 @@ type paymentService struct {
 	cfg          *config.Config
 	paymentRepo  repository.PaymentRepository
 	orderRepo    repository.OrderRepository
-	razorClient  *razorpay.Client
+	productRepo  repository.ProductRepository
+	rzazorClient  *razorpay.Client
 }
 
-func NewPaymentService(cfg *config.Config, paymentRepo repository.PaymentRepository, orderRepo repository.OrderRepository) PaymentService {
+func NewPaymentService(cfg *config.Config, paymentRepo repository.PaymentRepository, orderRepo repository.OrderRepository, productRepo repository.ProductRepository) PaymentService {
 	client := razorpay.NewClient(cfg.RazorpayKeyID, cfg.RazorpayKeySecret)
 	return &paymentService{
 		cfg:         cfg,
 		paymentRepo: paymentRepo,
 		orderRepo:   orderRepo,
-		razorClient: client,
+		productRepo: productRepo,
+		rzazorClient: client,
 	}
 }
 
@@ -43,7 +46,7 @@ func (s *paymentService) GenerateRazorpayOrder(amount int64, receipt string) (st
 		"currency": "INR",
 		"receipt":  receipt,
 	}
-	body, err := s.razorClient.Order.Create(data, nil)
+	body, err := s.rzazorClient.Order.Create(data, nil)
 	if err != nil {
 		return "", err
 	}
@@ -87,15 +90,11 @@ func (s *paymentService) ProcessPaymentSuccess(paymentID, orderID string, amount
 		return nil
 	}
 
-	// 2. Find Order
+	// 2. Find Order (with Items preloaded for stock deduction)
 	order, err := s.orderRepo.FindByRazorpayOrderID(orderID)
 	if err != nil {
 		return fmt.Errorf("order not found for razorpay_order_id: %s", orderID)
 	}
-
-	// Fetch exact amount from Razorpay (Optional, but recommended)
-	// payment, err := s.razorClient.Payment.Fetch(paymentID, nil, nil)
-	// amount_paid := payment["amount"].(float64)
 
 	// 3. Insert Payment History
 	history := &models.PaymentHistory{
@@ -112,6 +111,14 @@ func (s *paymentService) ProcessPaymentSuccess(paymentID, orderID string, amount
 	// 4. Update Order Status
 	if err := s.orderRepo.UpdatePaymentDetails(order.ID, orderID, paymentID, "paid"); err != nil {
 		return err
+	}
+
+	// 5. Deduct stock now that payment is confirmed
+	if len(order.Items) > 0 {
+		if err := s.productRepo.DeductStock(order.Items); err != nil {
+			// Log but don't fail the payment — stock can be reconciled manually
+			log.Printf("[Payment] WARN: Stock deduction failed for order %s: %v", order.ID, err)
+		}
 	}
 
 	return nil
