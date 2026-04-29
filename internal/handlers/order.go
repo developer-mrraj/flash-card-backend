@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"backend/internal/dto"
@@ -48,6 +49,7 @@ func (h *OrderHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.orderService.CreateOrder(claims.UserID, req)
 	if err != nil {
+		log.Printf("[OrderHandler] CreateOrder error for user %s: %v", claims.UserID, err)
 		http.Error(w, "Failed to create order: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

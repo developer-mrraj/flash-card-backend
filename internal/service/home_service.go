@@ -50,18 +50,19 @@ func (s *homeService) GetHomeContent() (*dto.HomeResponse, error) {
 		},
 	}
 
-	// 2. Fetch Featured Collections from DB
-	collections, err := s.featuredCollectionRepo.FindAll()
-	if err != nil {
-		return nil, err
-	}
+	// 2. Fetch Featured Collections from DB (non-fatal if table not yet migrated)
 	var featuredDTOs []dto.FeaturedCollectionDTO
-	for _, c := range collections {
-		featuredDTOs = append(featuredDTOs, dto.FeaturedCollectionDTO{
-			ID:    c.ID.String(),
-			Title: c.Title,
-			Image: c.Image,
-		})
+	if collections, fcErr := s.featuredCollectionRepo.FindAll(); fcErr == nil {
+		for _, c := range collections {
+			featuredDTOs = append(featuredDTOs, dto.FeaturedCollectionDTO{
+				ID:    c.ID.String(),
+				Title: c.Title,
+				Image: c.Image,
+			})
+		}
+	}
+	if featuredDTOs == nil {
+		featuredDTOs = []dto.FeaturedCollectionDTO{}
 	}
 
 	// 3. Fetch Bestselling Products from DB

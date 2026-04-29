@@ -98,6 +98,8 @@ definitions:
         items:
           $ref: '#/definitions/dto.OrderItemResponse'
         type: array
+      razorpay_order_id:
+        type: string
       status:
         type: string
       total_amount:
@@ -188,6 +190,36 @@ definitions:
       updated_at:
         type: string
     type: object
+  dto.ReviewRequest:
+    properties:
+      comment:
+        type: string
+      rating:
+        maximum: 5
+        minimum: 1
+        type: integer
+    required:
+    - rating
+    type: object
+  dto.ReviewResponse:
+    properties:
+      comment:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      product_id:
+        type: string
+      rating:
+        type: integer
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserResponse'
+      user_id:
+        type: string
+    type: object
   dto.SignupRequest:
     properties:
       email:
@@ -223,6 +255,69 @@ definitions:
       updated_at:
         type: string
     type: object
+  handlers.VerifyPaymentRequest:
+    properties:
+      amount:
+        description: amount in paise to cross-check or store
+        type: integer
+      razorpay_order_id:
+        type: string
+      razorpay_payment_id:
+        type: string
+      razorpay_signature:
+        type: string
+    required:
+    - amount
+    - razorpay_order_id
+    - razorpay_payment_id
+    - razorpay_signature
+    type: object
+  handlers.createLeadRequest:
+    properties:
+      email:
+        type: string
+    type: object
+  handlers.validatePromoRequest:
+    properties:
+      code:
+        type: string
+    type: object
+  handlers.validatePromoResponse:
+    properties:
+      code:
+        type: string
+      discount_percentage:
+        type: integer
+      message:
+        type: string
+      valid:
+        type: boolean
+    type: object
+  models.UserAddress:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      created_at:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: string
+      is_default:
+        type: boolean
+      phone:
+        type: string
+      pincode:
+        type: string
+      state:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -237,6 +332,53 @@ info:
   title: SJ Flash Cards Backend API
   version: "1.0"
 paths:
+  /addresses:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.UserAddress'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get saved addresses
+      tags:
+      - addresses
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.UserAddress'
+      security:
+      - BearerAuth: []
+      summary: Add a new delivery address
+      tags:
+      - addresses
+  /addresses/{id}:
+    delete:
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Delete an address
+      tags:
+      - addresses
+  /addresses/{id}/default:
+    put:
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Set an address as default
+      tags:
+      - addresses
   /admin/orders:
     get:
       description: Get a list of all orders across the system (Admin only)
@@ -578,24 +720,41 @@ paths:
       - auth
   /home:
     get:
-      description: Get aggregated home page content including hero cards, featured
-        collections, and bestselling products
+      description: Get featured collections, hero cards, and bestselling products
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.HomeResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       summary: Get home page content
       tags:
       - home
+  /leads:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Email
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.createLeadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Capture a visitor email for marketing
+      tags:
+      - leads
   /orders:
     get:
       description: Get a list of all orders placed by the authenticated user
@@ -748,6 +907,129 @@ paths:
       summary: Get a product by ID
       tags:
       - products
+  /products/{id}/reviews:
+    get:
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ReviewResponse'
+            type: array
+      summary: Get reviews for a product
+      tags:
+      - products
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Review Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ReviewResponse'
+      security:
+      - BearerAuth: []
+      summary: Add a review to a product
+      tags:
+      - products
+  /promo/validate:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Promo Code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.validatePromoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.validatePromoResponse'
+      summary: Validate a promo code
+      tags:
+      - promo
+  /razorpay-webhook:
+    post:
+      consumes:
+      - application/json
+      description: Endpoint to receive payment events from Razorpay directly
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Razorpay server-to-server webhook
+      tags:
+      - payments
+  /verify-payment:
+    post:
+      consumes:
+      - application/json
+      description: Verify the payment signature returned by the Razorpay frontend
+      parameters:
+      - description: Verify Payment Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.VerifyPaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Verify razorpay payment
+      tags:
+      - payments
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

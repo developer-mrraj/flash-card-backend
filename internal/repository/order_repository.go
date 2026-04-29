@@ -28,7 +28,7 @@ func NewOrderRepository(db *gorm.DB) OrderRepository {
 func (r *orderRepository) CreateOrderTransaction(order *models.Order, updates []models.Product) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		for _, product := range updates {
-			if err := tx.Save(&product).Error; err != nil {
+			if err := tx.Model(&models.Product{}).Where("id = ?", product.ID).Update("stock_quantity", product.StockQuantity).Error; err != nil {
 				return err
 			}
 		}

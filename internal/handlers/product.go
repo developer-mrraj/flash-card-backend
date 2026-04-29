@@ -32,7 +32,6 @@ func (h *ProductHandler) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Just take the first few as bestsellers for the mock
 	var bestsellers []dto.ProductResponse
 	if len(products) > 0 {
 		bestsellers = products

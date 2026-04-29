@@ -37,7 +37,7 @@ func RegisterRoutes(
 
 	r.Route("/api", func(r chi.Router) {
 
-		r.Get("/home", productHandler.Home)
+		r.Get("/home", homeHandler.GetHome)
 
 		// Public Auth Routes
 		r.Route("/auth", func(r chi.Router) {
