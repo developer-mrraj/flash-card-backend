@@ -1,6 +1,10 @@
 package routes
 
 import (
+	"net/http"
+	"os"
+	"path/filepath"
+
 	"backend/internal/config"
 	"backend/internal/handlers"
 	"backend/internal/middleware"
@@ -14,6 +18,7 @@ func RegisterRoutes(
 	authHandler *handlers.AuthHandler,
 	productHandler *handlers.ProductHandler,
 	orderHandler *handlers.OrderHandler,
+	homeHandler *handlers.HomeHandler,
 ) {
 
 	// Swagger documentation
@@ -21,7 +26,15 @@ func RegisterRoutes(
 		httpSwagger.URL("/swagger/doc.json"), // The url pointing to API definition
 	))
 
+	// Serve static images robustly at /images/*
+	workDir, _ := os.Getwd()
+	filesDir := http.Dir(filepath.Join(workDir, "static", "images"))
+	r.Handle("/images/*", http.StripPrefix("/images/", http.FileServer(filesDir)))
+
 	r.Route("/api", func(r chi.Router) {
+
+		// Public Home Route
+		r.Get("/home", homeHandler.GetHome)
 
 		// Public Auth Routes
 		r.Route("/auth", func(r chi.Router) {

@@ -16,6 +16,45 @@ definitions:
     required:
     - items
     type: object
+  dto.FeaturedCollectionDTO:
+    properties:
+      id:
+        type: string
+      image:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.HeroCard:
+    properties:
+      badge:
+        type: string
+      description:
+        type: string
+      image:
+        type: string
+      rating:
+        type: string
+      stats:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.HomeResponse:
+    properties:
+      bestselling_products:
+        items:
+          $ref: '#/definitions/dto.ProductResponse'
+        type: array
+      featured_collections:
+        items:
+          $ref: '#/definitions/dto.FeaturedCollectionDTO'
+        type: array
+      hero_cards:
+        items:
+          $ref: '#/definitions/dto.HeroCard'
+        type: array
+    type: object
   dto.LoginRequest:
     properties:
       email:
@@ -72,32 +111,80 @@ definitions:
     type: object
   dto.ProductRequest:
     properties:
+      badge:
+        type: string
+      badge_class:
+        type: string
+      cards_count:
+        type: integer
       description:
+        type: string
+      discount:
+        type: string
+      gallery_images:
+        items:
+          type: string
+        type: array
+      main_image:
         type: string
       name:
         type: string
+      original_price:
+        type: integer
       price:
         type: integer
+      rating:
+        type: number
+      reviews:
+        type: integer
+      slug:
+        type: string
       stock_quantity:
         type: integer
+      title:
+        type: string
     required:
     - name
     - price
     type: object
   dto.ProductResponse:
     properties:
+      badge:
+        type: string
+      badge_class:
+        type: string
+      cards_count:
+        type: integer
       created_at:
         type: string
       description:
         type: string
+      discount:
+        type: string
+      gallery_images:
+        items:
+          type: string
+        type: array
       id:
+        type: string
+      main_image:
         type: string
       name:
         type: string
+      original_price:
+        type: integer
       price:
         type: integer
+      rating:
+        type: number
+      reviews:
+        type: integer
+      slug:
+        type: string
       stock_quantity:
         type: integer
+      title:
+        type: string
       updated_at:
         type: string
     type: object
@@ -489,6 +576,26 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /home:
+    get:
+      description: Get aggregated home page content including hero cards, featured
+        collections, and bestselling products
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.HomeResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get home page content
+      tags:
+      - home
   /orders:
     get:
       description: Get a list of all orders placed by the authenticated user

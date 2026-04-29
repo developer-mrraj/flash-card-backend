@@ -548,6 +548,35 @@ const docTemplate = `{
                 }
             }
         },
+        "/home": {
+            "get": {
+                "description": "Get aggregated home page content including hero cards, featured collections, and bestselling products",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "home"
+                ],
+                "summary": "Get home page content",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HomeResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/orders": {
             "get": {
                 "security": [
@@ -810,6 +839,66 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.FeaturedCollectionDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.HeroCard": {
+            "type": "object",
+            "properties": {
+                "badge": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "string"
+                },
+                "stats": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.HomeResponse": {
+            "type": "object",
+            "properties": {
+                "bestselling_products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ProductResponse"
+                    }
+                },
+                "featured_collections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.FeaturedCollectionDTO"
+                    }
+                },
+                "hero_cards": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.HeroCard"
+                    }
+                }
+            }
+        },
         "dto.LoginRequest": {
             "type": "object",
             "required": [
@@ -899,40 +988,112 @@ const docTemplate = `{
                 "price"
             ],
             "properties": {
+                "badge": {
+                    "type": "string"
+                },
+                "badge_class": {
+                    "type": "string"
+                },
+                "cards_count": {
+                    "type": "integer"
+                },
                 "description": {
+                    "type": "string"
+                },
+                "discount": {
+                    "type": "string"
+                },
+                "gallery_images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "main_image": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
+                "original_price": {
+                    "type": "integer"
+                },
                 "price": {
                     "type": "integer"
                 },
+                "rating": {
+                    "type": "number"
+                },
+                "reviews": {
+                    "type": "integer"
+                },
+                "slug": {
+                    "type": "string"
+                },
                 "stock_quantity": {
                     "type": "integer"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },
         "dto.ProductResponse": {
             "type": "object",
             "properties": {
+                "badge": {
+                    "type": "string"
+                },
+                "badge_class": {
+                    "type": "string"
+                },
+                "cards_count": {
+                    "type": "integer"
+                },
                 "created_at": {
                     "type": "string"
                 },
                 "description": {
                     "type": "string"
                 },
+                "discount": {
+                    "type": "string"
+                },
+                "gallery_images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "id": {
+                    "type": "string"
+                },
+                "main_image": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
+                "original_price": {
+                    "type": "integer"
+                },
                 "price": {
                     "type": "integer"
                 },
+                "rating": {
+                    "type": "number"
+                },
+                "reviews": {
+                    "type": "integer"
+                },
+                "slug": {
+                    "type": "string"
+                },
                 "stock_quantity": {
                     "type": "integer"
+                },
+                "title": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
