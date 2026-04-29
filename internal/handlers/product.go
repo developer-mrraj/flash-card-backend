@@ -18,6 +18,36 @@ func NewProductHandler(productService service.ProductService) *ProductHandler {
 	return &ProductHandler{productService: productService}
 }
 
+// Home godoc
+// @Summary Get home page content
+// @Description Get featured collections, hero cards, and bestselling products
+// @Tags home
+// @Produce  json
+// @Success 200 {object} map[string]interface{}
+// @Router /home [get]
+func (h *ProductHandler) Home(w http.ResponseWriter, r *http.Request) {
+	products, err := h.productService.GetAll()
+	if err != nil {
+		http.Error(w, "Failed to load products", http.StatusInternalServerError)
+		return
+	}
+
+	// Just take the first few as bestsellers for the mock
+	var bestsellers []dto.ProductResponse
+	if len(products) > 0 {
+		bestsellers = products
+	}
+
+	homeContent := map[string]interface{}{
+		"hero_cards":           []interface{}{},
+		"featured_collections": []interface{}{},
+		"bestselling_products": bestsellers,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(homeContent)
+}
+
 // List godoc
 // @Summary List all products
 // @Description Get a list of all available products
@@ -162,4 +192,74 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// GetReviews godoc
+// @Summary Get reviews for a product
+// @Tags products
+// @Produce json
+// @Param id path string true "Product ID"
+// @Success 200 {array} dto.ReviewResponse
+// @Router /products/{id}/reviews [get]
+func (h *ProductHandler) GetReviews(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, "Invalid product ID", http.StatusBadRequest)
+		return
+	}
+
+	res, err := h.productService.GetReviews(id)
+	if err != nil {
+		http.Error(w, "Failed to load reviews", http.StatusInternalServerError)
+		return
+	}
+
+	if res == nil {
+		res = []dto.ReviewResponse{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+}
+
+// AddReview godoc
+// @Summary Add a review to a product
+// @Tags products
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID"
+// @Param request body dto.ReviewRequest true "Review Request"
+// @Success 201 {object} dto.ReviewResponse
+// @Router /products/{id}/reviews [post]
+func (h *ProductHandler) AddReview(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	productID, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, "Invalid product ID", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := getUserIDFromCtx(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req dto.ReviewRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	res, err := h.productService.AddReview(productID, userID, req)
+	if err != nil {
+		http.Error(w, "Failed to add review: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(res)
 }
