@@ -9,8 +9,11 @@ import (
 
 type Config struct {
 	Port      string
-	DBDSN     string
-	JWTSecret string
+	DBDSN                 string
+	JWTSecret             string
+	RazorpayKeyID         string
+	RazorpayKeySecret     string
+	RazorpayWebhookSecret string
 }
 
 func LoadConfig() *Config {
@@ -54,9 +57,16 @@ func LoadConfig() *Config {
 		jwtSecret = "supersecretkey_change_me_in_production"
 	}
 
+	razorpayKeyID := os.Getenv("RAZORPAY_KEY_ID")
+	razorpayKeySecret := os.Getenv("RAZORPAY_KEY_SECRET")
+	razorpayWebhookSecret := os.Getenv("RAZORPAY_WEBHOOK_SECRET")
+
 	return &Config{
-		Port:      port,
-		DBDSN:     dsn,
-		JWTSecret: jwtSecret,
+		Port:                  port,
+		DBDSN:                 dsn,
+		JWTSecret:             jwtSecret,
+		RazorpayKeyID:         razorpayKeyID,
+		RazorpayKeySecret:     razorpayKeySecret,
+		RazorpayWebhookSecret: razorpayWebhookSecret,
 	}
 }

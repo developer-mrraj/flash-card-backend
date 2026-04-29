@@ -12,8 +12,10 @@ type Order struct {
 	UserID      uuid.UUID   `gorm:"type:uuid;not null" json:"user_id"`
 	User        User        `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	TotalAmount int64       `gorm:"not null" json:"total_amount"` // Stored in cents
-	Status      string      `gorm:"type:varchar(50);default:'pending'" json:"status"` // 'pending', 'paid', 'shipped', 'delivered', 'cancelled'
-	Items       []OrderItem `gorm:"foreignKey:OrderID" json:"items"`
+	Status            string      `gorm:"type:varchar(50);default:'pending'" json:"status"` // 'pending', 'paid', 'shipped', 'delivered', 'cancelled'
+	RazorpayOrderID   string      `gorm:"type:varchar(255)" json:"razorpay_order_id,omitempty"`
+	RazorpayPaymentID string      `gorm:"type:varchar(255)" json:"razorpay_payment_id,omitempty"`
+	Items             []OrderItem `gorm:"foreignKey:OrderID" json:"items"`
 	CreatedAt   time.Time   `json:"created_at"`
 	UpdatedAt   time.Time   `json:"updated_at"`
 }

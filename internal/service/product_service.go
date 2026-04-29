@@ -13,14 +13,17 @@ type ProductService interface {
 	Create(req dto.ProductRequest) (*dto.ProductResponse, error)
 	Update(id uuid.UUID, req dto.ProductRequest) (*dto.ProductResponse, error)
 	Delete(id uuid.UUID) error
+	AddReview(productID uuid.UUID, userID uuid.UUID, req dto.ReviewRequest) (*dto.ReviewResponse, error)
+	GetReviews(productID uuid.UUID) ([]dto.ReviewResponse, error)
 }
 
 type productService struct {
-	repo repository.ProductRepository
+	repo       repository.ProductRepository
+	reviewRepo repository.ReviewRepository
 }
 
-func NewProductService(repo repository.ProductRepository) ProductService {
-	return &productService{repo: repo}
+func NewProductService(repo repository.ProductRepository, reviewRepo repository.ReviewRepository) ProductService {
+	return &productService{repo: repo, reviewRepo: reviewRepo}
 }
 
 func mapToProductResponse(p *models.Product) dto.ProductResponse {
@@ -127,4 +130,74 @@ func (s *productService) Update(id uuid.UUID, req dto.ProductRequest) (*dto.Prod
 
 func (s *productService) Delete(id uuid.UUID) error {
 	return s.repo.Delete(id)
+}
+
+func (s *productService) AddReview(productID uuid.UUID, userID uuid.UUID, req dto.ReviewRequest) (*dto.ReviewResponse, error) {
+	review := &models.Review{
+		ProductID: productID,
+		UserID:    userID,
+		Rating:    req.Rating,
+		Comment:   req.Comment,
+	}
+
+	if err := s.reviewRepo.CreateOrUpdate(review); err != nil {
+		return nil, err
+	}
+
+	// Update product rating
+	avgRating, count, err := s.reviewRepo.GetAverageRating(productID)
+	if err == nil {
+		s.repo.UpdateRating(productID, avgRating, count)
+	}
+
+	// Re-fetch to get user details
+	reviews, _ := s.reviewRepo.FindByProductID(productID)
+	for _, r := range reviews {
+		if r.ID == review.ID {
+			review = &r
+			break
+		}
+	}
+
+	res := dto.ReviewResponse{
+		ID:        review.ID,
+		ProductID: review.ProductID,
+		UserID:    review.UserID,
+		Rating:    review.Rating,
+		Comment:   review.Comment,
+		CreatedAt: review.CreatedAt,
+		UpdatedAt: review.UpdatedAt,
+		User: dto.UserResponse{
+			ID:   review.User.ID,
+			Name: review.User.Name,
+		},
+	}
+
+	return &res, nil
+}
+
+func (s *productService) GetReviews(productID uuid.UUID) ([]dto.ReviewResponse, error) {
+	reviews, err := s.reviewRepo.FindByProductID(productID)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []dto.ReviewResponse
+	for _, r := range reviews {
+		res = append(res, dto.ReviewResponse{
+			ID:        r.ID,
+			ProductID: r.ProductID,
+			UserID:    r.UserID,
+			Rating:    r.Rating,
+			Comment:   r.Comment,
+			CreatedAt: r.CreatedAt,
+			UpdatedAt: r.UpdatedAt,
+			User: dto.UserResponse{
+				ID:   r.User.ID,
+				Name: r.User.Name,
+			},
+		})
+	}
+
+	return res, nil
 }

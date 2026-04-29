@@ -87,14 +87,15 @@ type UpdateOrderStatusRequest struct {
 }
 
 type OrderResponse struct {
-	ID          uuid.UUID             `json:"id"`
-	UserID      uuid.UUID             `json:"user_id"`
-	User        *UserResponse         `json:"user,omitempty"`
-	TotalAmount int64                 `json:"total_amount"`
-	Status      string                `json:"status"`
-	Items       []OrderItemResponse   `json:"items"`
-	CreatedAt   time.Time             `json:"created_at"`
-	UpdatedAt   time.Time             `json:"updated_at"`
+	ID              uuid.UUID             `json:"id"`
+	UserID          uuid.UUID             `json:"user_id"`
+	User            *UserResponse         `json:"user,omitempty"`
+	TotalAmount     int64                 `json:"total_amount"`
+	Status          string                `json:"status"`
+	RazorpayOrderID string                `json:"razorpay_order_id,omitempty"`
+	Items           []OrderItemResponse   `json:"items"`
+	CreatedAt       time.Time             `json:"created_at"`
+	UpdatedAt       time.Time             `json:"updated_at"`
 }
 
 type OrderItemResponse struct {
@@ -103,4 +104,21 @@ type OrderItemResponse struct {
 	Product   *ProductResponse `json:"product,omitempty"`
 	Quantity  int              `json:"quantity"`
 	UnitPrice int64            `json:"unit_price"`
+}
+
+// Review
+type ReviewRequest struct {
+	Rating  int    `json:"rating" binding:"required,min=1,max=5"`
+	Comment string `json:"comment"`
+}
+
+type ReviewResponse struct {
+	ID        uuid.UUID    `json:"id"`
+	ProductID uuid.UUID    `json:"product_id"`
+	UserID    uuid.UUID    `json:"user_id"`
+	User      UserResponse `json:"user"`
+	Rating    int          `json:"rating"`
+	Comment   string       `json:"comment"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at"`
 }

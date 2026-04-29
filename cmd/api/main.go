@@ -49,18 +49,28 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	productRepo := repository.NewProductRepository(db)
 	orderRepo := repository.NewOrderRepository(db)
+	paymentRepo := repository.NewPaymentRepository(db)
+	addressRepo := repository.NewAddressRepository(db)
+	reviewRepo := repository.NewReviewRepository(db)
+	promoRepo := repository.NewPromoRepository(db)
+	leadRepo := repository.NewLeadRepository(db)
 	featuredCollectionRepo := repository.NewFeaturedCollectionRepository(db)
 
 	// 4. Initialize Services
 	authService := service.NewAuthService(userRepo, cfg)
-	productService := service.NewProductService(productRepo)
-	orderService := service.NewOrderService(orderRepo, productRepo)
+	productService := service.NewProductService(productRepo, reviewRepo)
+	paymentService := service.NewPaymentService(cfg, paymentRepo, orderRepo)
+	orderService := service.NewOrderService(orderRepo, productRepo, paymentService)
 	homeService := service.NewHomeService(productRepo, featuredCollectionRepo)
 
 	// 5. Initialize Handlers
 	authHandler := handlers.NewAuthHandler(authService)
 	productHandler := handlers.NewProductHandler(productService)
 	orderHandler := handlers.NewOrderHandler(orderService)
+	paymentHandler := handlers.NewPaymentHandler(paymentService)
+	addressHandler := handlers.NewAddressHandler(addressRepo)
+	promoHandler := handlers.NewPromoHandler(promoRepo)
+	leadHandler := handlers.NewLeadHandler(leadRepo)
 	homeHandler := handlers.NewHomeHandler(homeService)
 
 	// 6. Setup Router
@@ -79,7 +89,7 @@ func main() {
 	}))
 
 	// 7. Register Routes
-	routes.RegisterRoutes(r, cfg, authHandler, productHandler, orderHandler, homeHandler)
+	routes.RegisterRoutes(r, cfg, authHandler, productHandler, orderHandler, paymentHandler, addressHandler, promoHandler, leadHandler, homeHandler)
 
 	// 8. Start Server
 	log.Printf("Starting server on port %s...", cfg.Port)

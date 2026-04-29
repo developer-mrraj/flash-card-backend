@@ -13,6 +13,8 @@ type OrderRepository interface {
 	FindAll() ([]models.Order, error)
 	FindByID(id uuid.UUID) (*models.Order, error)
 	UpdateStatus(id uuid.UUID, status string) error
+	UpdatePaymentDetails(id uuid.UUID, rzpOrderID string, rzpPaymentID string, status string) error
+	FindByRazorpayOrderID(rzpOrderID string) (*models.Order, error)
 }
 
 type orderRepository struct {
@@ -39,7 +41,7 @@ func (r *orderRepository) CreateOrderTransaction(order *models.Order, updates []
 
 func (r *orderRepository) FindByUserID(userID uuid.UUID) ([]models.Order, error) {
 	var orders []models.Order
-	if err := r.db.Preload("Items.Product").Where("user_id = ?", userID).Find(&orders).Error; err != nil {
+	if err := r.db.Preload("Items.Product").Where("user_id = ?", userID).Order("created_at DESC").Find(&orders).Error; err != nil {
 		return nil, err
 	}
 	return orders, nil
@@ -71,4 +73,20 @@ func (r *orderRepository) FindByID(id uuid.UUID) (*models.Order, error) {
 
 func (r *orderRepository) UpdateStatus(id uuid.UUID, status string) error {
 	return r.db.Model(&models.Order{}).Where("id = ?", id).Update("status", status).Error
+}
+
+func (r *orderRepository) UpdatePaymentDetails(id uuid.UUID, rzpOrderID string, rzpPaymentID string, status string) error {
+	return r.db.Model(&models.Order{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"razorpay_order_id":   rzpOrderID,
+		"razorpay_payment_id": rzpPaymentID,
+		"status":              status,
+	}).Error
+}
+
+func (r *orderRepository) FindByRazorpayOrderID(rzpOrderID string) (*models.Order, error) {
+	var order models.Order
+	if err := r.db.Where("razorpay_order_id = ?", rzpOrderID).First(&order).Error; err != nil {
+		return nil, err
+	}
+	return &order, nil
 }
