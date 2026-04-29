@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"log"
 
 	"backend/internal/dto"
 	"backend/internal/models"
@@ -10,7 +11,7 @@ import (
 )
 
 type OrderService interface {
-	CreateOrder(userID uuid.UUID, req dto.CreateOrderRequest) error
+	CreateOrder(userID uuid.UUID, req dto.CreateOrderRequest) (*dto.OrderResponse, error)
 	GetMyOrders(userID uuid.UUID) ([]dto.OrderResponse, error)
 	GetMyOrder(userID, orderID uuid.UUID) (*dto.OrderResponse, error)
 	GetAllOrders() ([]dto.OrderResponse, error)
@@ -20,20 +21,22 @@ type OrderService interface {
 type orderService struct {
 	orderRepo   repository.OrderRepository
 	productRepo repository.ProductRepository
+	paymentSvc  PaymentService
 }
 
-func NewOrderService(orderRepo repository.OrderRepository, productRepo repository.ProductRepository) OrderService {
-	return &orderService{orderRepo: orderRepo, productRepo: productRepo}
+func NewOrderService(orderRepo repository.OrderRepository, productRepo repository.ProductRepository, paymentSvc PaymentService) OrderService {
+	return &orderService{orderRepo: orderRepo, productRepo: productRepo, paymentSvc: paymentSvc}
 }
 
 func mapToOrderResponse(o *models.Order) dto.OrderResponse {
 	res := dto.OrderResponse{
-		ID:          o.ID,
-		UserID:      o.UserID,
-		TotalAmount: o.TotalAmount,
-		Status:      o.Status,
-		CreatedAt:   o.CreatedAt,
-		UpdatedAt:   o.UpdatedAt,
+		ID:              o.ID,
+		UserID:          o.UserID,
+		TotalAmount:     o.TotalAmount,
+		Status:          o.Status,
+		RazorpayOrderID: o.RazorpayOrderID,
+		CreatedAt:       o.CreatedAt,
+		UpdatedAt:       o.UpdatedAt,
 	}
 
 	if o.User.ID != uuid.Nil {
@@ -72,7 +75,7 @@ func mapToOrderResponse(o *models.Order) dto.OrderResponse {
 	return res
 }
 
-func (s *orderService) CreateOrder(userID uuid.UUID, req dto.CreateOrderRequest) error {
+func (s *orderService) CreateOrder(userID uuid.UUID, req dto.CreateOrderRequest) (*dto.OrderResponse, error) {
 	var totalAmount int64
 	var orderItems []models.OrderItem
 	var productsToUpdate []models.Product
@@ -80,11 +83,11 @@ func (s *orderService) CreateOrder(userID uuid.UUID, req dto.CreateOrderRequest)
 	for _, itemReq := range req.Items {
 		product, err := s.productRepo.FindByID(itemReq.ProductID)
 		if err != nil {
-			return errors.New("product not found")
+			return nil, errors.New("product not found")
 		}
 
 		if product.StockQuantity < itemReq.Quantity {
-			return errors.New("not enough stock")
+			return nil, errors.New("not enough stock")
 		}
 
 		product.StockQuantity -= itemReq.Quantity
@@ -107,7 +110,25 @@ func (s *orderService) CreateOrder(userID uuid.UUID, req dto.CreateOrderRequest)
 		Items:       orderItems,
 	}
 
-	return s.orderRepo.CreateOrderTransaction(order, productsToUpdate)
+	err := s.orderRepo.CreateOrderTransaction(order, productsToUpdate)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate Razorpay Order
+	receipt := order.ID.String() // Max length is 40 characters in Razorpay (UUID is 36)
+	rzpOrderID, rzpErr := s.paymentSvc.GenerateRazorpayOrder(order.TotalAmount, receipt)
+	if rzpErr != nil {
+		log.Printf("[Razorpay] WARN: Failed to create Razorpay order for order %s: %v", order.ID, rzpErr)
+	} else if rzpOrderID != "" {
+		// Update the order in DB with Razorpay Order ID
+		s.orderRepo.UpdatePaymentDetails(order.ID, rzpOrderID, "", "pending")
+		order.RazorpayOrderID = rzpOrderID
+		log.Printf("[Razorpay] Order created: %s for order %s", rzpOrderID, order.ID)
+	}
+
+	res := mapToOrderResponse(order)
+	return &res, nil
 }
 
 func (s *orderService) GetMyOrders(userID uuid.UUID) ([]dto.OrderResponse, error) {

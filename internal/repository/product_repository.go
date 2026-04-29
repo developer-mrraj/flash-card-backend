@@ -11,6 +11,7 @@ type ProductRepository interface {
 	FindByID(id uuid.UUID) (*models.Product, error)
 	Create(product *models.Product) error
 	Update(product *models.Product) error
+	UpdateRating(id uuid.UUID, rating float64, reviews int) error
 	Delete(id uuid.UUID) error
 }
 
@@ -48,4 +49,11 @@ func (r *productRepository) Update(product *models.Product) error {
 
 func (r *productRepository) Delete(id uuid.UUID) error {
 	return r.db.Delete(&models.Product{}, id).Error
+}
+
+func (r *productRepository) UpdateRating(id uuid.UUID, rating float64, reviews int) error {
+	return r.db.Model(&models.Product{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"rating":  rating,
+		"reviews": reviews,
+	}).Error
 }

@@ -46,14 +46,15 @@ func (h *OrderHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.orderService.CreateOrder(claims.UserID, req); err != nil {
+	res, err := h.orderService.CreateOrder(claims.UserID, req)
+	if err != nil {
 		http.Error(w, "Failed to create order: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Order created successfully"})
+	json.NewEncoder(w).Encode(res)
 }
 
 // ListMyOrders godoc
