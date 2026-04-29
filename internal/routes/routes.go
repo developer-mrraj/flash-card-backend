@@ -18,14 +18,11 @@ func RegisterRoutes(
 	authHandler *handlers.AuthHandler,
 	productHandler *handlers.ProductHandler,
 	orderHandler *handlers.OrderHandler,
-<<<<<<< HEAD
-	homeHandler *handlers.HomeHandler,
-=======
 	paymentHandler *handlers.PaymentHandler,
 	addressHandler *handlers.AddressHandler,
 	promoHandler *handlers.PromoHandler,
 	leadHandler *handlers.LeadHandler,
->>>>>>> 1f598bf4d3a2416e14926343b49f38f840840628
+	homeHandler *handlers.HomeHandler,
 ) {
 
 	// Swagger documentation
@@ -40,12 +37,7 @@ func RegisterRoutes(
 
 	r.Route("/api", func(r chi.Router) {
 
-<<<<<<< HEAD
-		// Public Home Route
-		r.Get("/home", homeHandler.GetHome)
-=======
 		r.Get("/home", productHandler.Home)
->>>>>>> 1f598bf4d3a2416e14926343b49f38f840840628
 
 		// Public Auth Routes
 		r.Route("/auth", func(r chi.Router) {
