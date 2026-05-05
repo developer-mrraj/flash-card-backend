@@ -29,7 +29,7 @@ import (
 // @license.name  Apache 2.0
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host      localhost:8080
+// @host      api.yourdomain.com
 // @BasePath  /api
 
 // @securityDefinitions.apikey BearerAuth
@@ -93,7 +93,7 @@ func main() {
 
 	// 8. Start Server
 	log.Printf("Starting server on port %s...", cfg.Port)
-	log.Printf("Swagger documentation available at http://localhost:%s/swagger/index.html", cfg.Port)
+	log.Printf("Swagger documentation available at /swagger/index.html")
 	if err := http.ListenAndServe(":"+cfg.Port, r); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}

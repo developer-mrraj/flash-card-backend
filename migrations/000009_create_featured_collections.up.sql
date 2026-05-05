@@ -7,6 +7,6 @@ CREATE TABLE IF NOT EXISTS featured_collections (
 );
 
 INSERT INTO featured_collections (id, title, image, created_at, updated_at) VALUES
-(gen_random_uuid(), 'EPIC SAGAS', 'http://localhost:8080/images/feat_history.png', NOW(), NOW()),
-(gen_random_uuid(), 'EXAM PRO', 'http://localhost:8080/images/feat_upsc.png', NOW(), NOW()),
-(gen_random_uuid(), 'TRADITIONS', 'http://localhost:8080/images/feat_mythology.png', NOW(), NOW());
+(gen_random_uuid(), 'EPIC SAGAS', '/images/feat_history.png', NOW(), NOW()),
+(gen_random_uuid(), 'EXAM PRO', '/images/feat_upsc.png', NOW(), NOW()),
+(gen_random_uuid(), 'TRADITIONS', '/images/feat_mythology.png', NOW(), NOW());

@@ -25,7 +25,7 @@ func (s *homeService) GetHomeContent() (*dto.HomeResponse, error) {
 	// 1. Hardcoded Hero Cards
 	heroCards := []dto.HeroCard{
 		{
-			Image:       "http://localhost:8080/images/hero_shivaji.png",
+			Image:       "/images/hero_shivaji.png",
 			Badge:       "HISTORY",
 			Title:       "Shivaji Maharaj Era",
 			Description: "Master the legend of the Maratha Empire. Our premium visual flashcards cover the Grand Coronation, Guerrilla Warfare tactics, Administration, and the architectural brilliance of the Sea Forts.",
@@ -33,7 +33,7 @@ func (s *homeService) GetHomeContent() (*dto.HomeResponse, error) {
 			Rating:      "⭐ 4.9/5",
 		},
 		{
-			Image:       "http://localhost:8080/images/hero_ramayana.png",
+			Image:       "/images/hero_ramayana.png",
 			Badge:       "CULTURE",
 			Title:       "Ramayana Visuals",
 			Description: "Visual storytelling through flashcards covering all 7 Kandas of the Ramayana. Experience the epic journey of Lord Rama, Sita, and Hanuman with stunning artwork.",
@@ -41,7 +41,7 @@ func (s *homeService) GetHomeContent() (*dto.HomeResponse, error) {
 			Rating:      "⭐ 4.8/5",
 		},
 		{
-			Image:       "http://localhost:8080/images/hero_polity.png",
+			Image:       "/images/hero_polity.png",
 			Badge:       "EXAM PRO",
 			Title:       "UPSC Polity Series",
 			Description: "Complete coverage of Laxmikanth, Constitutional Articles, and Amendments. Perfect for quick revisions before the Prelims and Mains examinations.",

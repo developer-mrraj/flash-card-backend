@@ -1,16 +1,40 @@
 package routes
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"path/filepath"
 
 	"backend/internal/config"
+	"backend/internal/database"
 	"backend/internal/handlers"
 	"backend/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	httpSwagger "github.com/swaggo/http-swagger"
+	"gorm.io/gorm"
 )
+
+func TestDB(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		rows, err := db.Raw(`SELECT table_name FROM information_schema.tables WHERE table_schema='public'`).Rows()
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		defer rows.Close()
+
+		var tables []string
+		for rows.Next() {
+			var name string
+			rows.Scan(&name)
+			tables = append(tables, name)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(tables)
+	}
+}
 
 func RegisterRoutes(
 	r *chi.Mux,
@@ -34,6 +58,9 @@ func RegisterRoutes(
 	workDir, _ := os.Getwd()
 	filesDir := http.Dir(filepath.Join(workDir, "static", "images"))
 	r.Handle("/images/*", http.StripPrefix("/images/", http.FileServer(filesDir)))
+
+	// Test Database Connection Route
+	r.Get("/test-db", TestDB(database.DB))
 
 	r.Route("/api", func(r chi.Router) {
 
