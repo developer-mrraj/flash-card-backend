@@ -1,6 +1,6 @@
 module backend
 
-go 1.25.5
+go 1.26
 
 require (
 	github.com/go-chi/chi/v5 v5.2.5
@@ -36,7 +36,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lib/pq v1.10.9
-	github.com/razorpay/razorpay-go v1.4.0
+	github.com/razorpay/razorpay-go v1.4.1
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
