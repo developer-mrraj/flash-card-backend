@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -48,7 +49,7 @@ func LoadConfig() *Config {
 	dsn := "host=" + dbHost + " user=" + dbUser + " password=" + dbPassword + " dbname=" + dbName + " port=" + dbPort + " sslmode=disable TimeZone=UTC"
 	
 	// Optional DSN override
-	if envDSN := os.Getenv("DATABASE_URL"); envDSN != "" {
+	if envDSN := strings.TrimSpace(os.Getenv("DATABASE_URL")); envDSN != "" {
 		dsn = envDSN
 	}
 
