@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"backend/internal/service"
+	_ "backend/internal/dto"
 )
 
 type HomeHandler struct {
