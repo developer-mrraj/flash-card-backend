@@ -46,8 +46,10 @@ func LoadConfig() *Config {
 		dbName = "sj_flash_cards"
 	}
 
-	dsn := "host=" + dbHost + " user=" + dbUser + " password=" + dbPassword + " dbname=" + dbName + " port=" + dbPort + " sslmode=disable TimeZone=UTC"
-	
+	dsn := "host=" + dbHost + " user=" + dbUser + " dbname=" + dbName + " port=" + dbPort + " sslmode=disable TimeZone=UTC"
+	if dbPassword != "" {
+		dsn += " password=" + dbPassword
+	}	
 	// Optional DSN override
 	if envDSN := strings.TrimSpace(os.Getenv("DATABASE_URL")); envDSN != "" {
 		dsn = envDSN

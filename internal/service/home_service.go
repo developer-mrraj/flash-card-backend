@@ -25,6 +25,14 @@ func (s *homeService) GetHomeContent() (*dto.HomeResponse, error) {
 	// 1. Hardcoded Hero Cards
 	heroCards := []dto.HeroCard{
 		{
+			Image:       "/images/banner_249.png",
+			Badge:       "OFFER",
+			Title:       "Complete Learning Flash Cards",
+			Description: "Build Knowledge, Strengthen Memory & Excel in Every Step! Covers History, Heritage & Education Topics. Perfect for kids, students, and competitive exams.",
+			Stats:       "🎴 3 Powerful Sets",
+			Rating:      "⭐ 5.0/5",
+		},
+		{
 			Image:       "/images/hero_shivaji.png",
 			Badge:       "HISTORY",
 			Title:       "Shivaji Maharaj Era",
