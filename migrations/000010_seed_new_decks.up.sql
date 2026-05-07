@@ -14,7 +14,7 @@ INSERT INTO products (
     4.9,
     1200,
     '/images/a_z_800_600.png',
-    ARRAY[]::TEXT[],
+    ARRAY['/images/1st_a_z.png', '/images/more_a_z.png', '/images/boy_a_z.png', '/images/a_z_cards.png']::TEXT[],
     52,
     NOW(),
     NOW()
@@ -32,7 +32,7 @@ INSERT INTO products (
     4.8,
     3400,
     '/images/neet_800_600.png',
-    ARRAY[]::TEXT[],
+    ARRAY['/images/2nd_neet.png', '/images/neet_3.png']::TEXT[],
     150,
     NOW(),
     NOW()

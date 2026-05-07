@@ -1,7 +1,7 @@
--- Force update images
-UPDATE products SET main_image = '/images/a_z_800_600.png' WHERE slug = 'a-to-z-indian-heritage';
-UPDATE products SET main_image = '/images/maharaj_800_600.png' WHERE slug = 'shivaji-maratha';
-UPDATE products SET main_image = '/images/neet_800_600.png' WHERE slug = 'neet-toppers-blueprint';
+-- Force update main images and gallery images
+UPDATE products SET main_image = '/images/a_z_800_600.png', gallery_images = ARRAY['/images/1st_a_z.png', '/images/more_a_z.png', '/images/boy_a_z.png', '/images/a_z_cards.png']::TEXT[] WHERE slug = 'a-to-z-indian-heritage';
+UPDATE products SET main_image = '/images/maharaj_800_600.png', gallery_images = ARRAY['/images/2nd_maharaj.png', '/images/3rd_maharaj.png']::TEXT[] WHERE slug = 'shivaji-maratha';
+UPDATE products SET main_image = '/images/neet_800_600.png', gallery_images = ARRAY['/images/2nd_neet.png', '/images/neet_3.png']::TEXT[] WHERE slug = 'neet-toppers-blueprint';
 
 -- Create a helper function to safely migrate IDs
 CREATE OR REPLACE FUNCTION sync_product_id(target_slug TEXT, desired_id UUID)
