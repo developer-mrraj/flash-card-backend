@@ -64,6 +64,12 @@ func mapToOrderResponse(o *models.Order) dto.OrderResponse {
 				Description:   item.Product.Description,
 				Price:         item.Product.Price,
 				StockQuantity: item.Product.StockQuantity,
+				Slug:          item.Product.Slug,
+				Title:         item.Product.Title,
+				Badge:         item.Product.Badge,
+				BadgeClass:    item.Product.BadgeClass,
+				MainImage:     item.Product.MainImage,
+				CardsCount:    item.Product.CardsCount,
 				CreatedAt:     item.Product.CreatedAt,
 				UpdatedAt:     item.Product.UpdatedAt,
 			}
