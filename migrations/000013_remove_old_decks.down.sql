@@ -1,0 +1,2 @@
+-- Reverting the removal is non-trivial as we don't store the deleted data in this script.
+-- Leaving empty or add a warning.
