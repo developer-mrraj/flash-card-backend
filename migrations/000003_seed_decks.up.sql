@@ -34,7 +34,7 @@ INSERT INTO products (
     1299,
     '30% OFF',
     '/images/maharaj_800_600.png',
-    ARRAY['/images/gallery_claw.png', '/images/gallery_stack.png'],
+    ARRAY['/images/2nd_maharaj.png', '/images/3rd_maharaj.png'],
     52,
     NOW(),
     NOW()
