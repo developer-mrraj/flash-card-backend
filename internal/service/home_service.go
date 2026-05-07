@@ -12,12 +12,14 @@ type HomeService interface {
 type homeService struct {
 	productRepo            repository.ProductRepository
 	featuredCollectionRepo repository.FeaturedCollectionRepository
+	bannerRepo             repository.BannerRepository
 }
 
-func NewHomeService(productRepo repository.ProductRepository, featuredCollectionRepo repository.FeaturedCollectionRepository) HomeService {
+func NewHomeService(productRepo repository.ProductRepository, featuredCollectionRepo repository.FeaturedCollectionRepository, bannerRepo repository.BannerRepository) HomeService {
 	return &homeService{
 		productRepo:            productRepo,
 		featuredCollectionRepo: featuredCollectionRepo,
+		bannerRepo:             bannerRepo,
 	}
 }
 
@@ -84,9 +86,34 @@ func (s *homeService) GetHomeContent() (*dto.HomeResponse, error) {
 	}
 
 	// Assemble Response
+	// 4. Fetch active banners from DB (non-fatal if table not yet migrated)
+	var bannerDTOs []dto.BannerDTO
+	if banners, bErr := s.bannerRepo.FindAllActive(); bErr == nil {
+		for _, b := range banners {
+			bannerDTOs = append(bannerDTOs, dto.BannerDTO{
+				ID:        b.ID.String(),
+				Slot:      b.Slot,
+				Title:     b.Title,
+				Subtitle:  b.Subtitle,
+				CtaText:   b.CtaText,
+				CtaLink:   b.CtaLink,
+				ImageURL:  b.ImageURL,
+				BgColor:   b.BgColor,
+				TextColor: b.TextColor,
+				BadgeText: b.BadgeText,
+				IsActive:  b.IsActive,
+				SortOrder: b.SortOrder,
+			})
+		}
+	}
+	if bannerDTOs == nil {
+		bannerDTOs = []dto.BannerDTO{}
+	}
+
 	return &dto.HomeResponse{
 		HeroCards:           heroCards,
 		FeaturedCollections: featuredDTOs,
 		BestsellingProducts: productDTOs,
+		Banners:             bannerDTOs,
 	}, nil
 }
