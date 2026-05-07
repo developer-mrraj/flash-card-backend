@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -46,9 +47,10 @@ type ProductRequest struct {
 	Reviews       int      `json:"reviews"`
 	OriginalPrice *int64   `json:"original_price"`
 	Discount      string   `json:"discount"`
-	MainImage     string   `json:"main_image"`
-	GalleryImages []string `json:"gallery_images"`
-	CardsCount    int      `json:"cards_count"`
+	MainImage     string          `json:"main_image"`
+	GalleryImages []string        `json:"gallery_images"`
+	CardsCount    int             `json:"cards_count"`
+	Features      json.RawMessage `json:"features"`
 }
 
 type ProductResponse struct {
@@ -65,11 +67,12 @@ type ProductResponse struct {
 	Reviews       int       `json:"reviews"`
 	OriginalPrice *int64    `json:"original_price,omitempty"`
 	Discount      string    `json:"discount,omitempty"`
-	MainImage     string    `json:"main_image"`
-	GalleryImages []string  `json:"gallery_images"`
-	CardsCount    int       `json:"cards_count"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	MainImage     string          `json:"main_image"`
+	GalleryImages []string        `json:"gallery_images"`
+	CardsCount    int             `json:"cards_count"`
+	Features      json.RawMessage `json:"features"`
+	CreatedAt     time.Time       `json:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
 }
 
 // Order
