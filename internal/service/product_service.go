@@ -44,6 +44,7 @@ func mapToProductResponse(p *models.Product) dto.ProductResponse {
 		MainImage:     p.MainImage,
 		GalleryImages: []string(p.GalleryImages),
 		CardsCount:    p.CardsCount,
+		Features:      p.Features,
 		CreatedAt:     p.CreatedAt,
 		UpdatedAt:     p.UpdatedAt,
 	}
@@ -88,6 +89,7 @@ func (s *productService) Create(req dto.ProductRequest) (*dto.ProductResponse, e
 		MainImage:     req.MainImage,
 		GalleryImages: req.GalleryImages,
 		CardsCount:    req.CardsCount,
+		Features:      req.Features,
 	}
 
 	if err := s.repo.Create(product); err != nil {
@@ -119,6 +121,9 @@ func (s *productService) Update(id uuid.UUID, req dto.ProductRequest) (*dto.Prod
 	product.MainImage = req.MainImage
 	product.GalleryImages = req.GalleryImages
 	product.CardsCount = req.CardsCount
+	if req.Features != nil {
+		product.Features = req.Features
+	}
 
 	if err := s.repo.Update(product); err != nil {
 		return nil, err
