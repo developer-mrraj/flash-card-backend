@@ -20,7 +20,7 @@ INSERT INTO products (
     updated_at
 ) VALUES
 (
-    gen_random_uuid(),
+    'a4d312a9-b63e-4327-8b3f-dd42bfe738bf',
     'Chhatrapati Shivaji Maharaj: The Great Maratha',
     'Master the legend of the Maratha Empire. This collector''s edition includes 52 beautifully illustrated cards covering the Coronation, Guerrilla Warfare tactics, Administration (Ashta Pradhan), and the architectural marvels of Sea Forts.',
     899,
@@ -33,14 +33,14 @@ INSERT INTO products (
     2104,
     1299,
     '30% OFF',
-    '/images/hero_shivaji.png',
+    '/images/maharaj_800_600.png',
     ARRAY['/images/gallery_claw.png', '/images/gallery_stack.png'],
     52,
     NOW(),
     NOW()
 ),
 (
-    gen_random_uuid(),
+    '358c2b76-8025-4b0d-9b1d-91b5c490ec31',
     'Ramayana: The Epic Visual Deck',
     'Visual storytelling through flashcards covering all 7 Kandas of the Ramayana.',
     1299,
@@ -60,7 +60,7 @@ INSERT INTO products (
     NOW()
 ),
 (
-    gen_random_uuid(),
+    '7b11d87f-9486-4f4f-80d5-5eb7127e2d93',
     'UPSC Polity Master Set',
     'Complete coverage of Laxmikanth, Constitutional Articles, and Amendments.',
     1999,
