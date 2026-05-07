@@ -47,6 +47,7 @@ func RegisterRoutes(
 	promoHandler *handlers.PromoHandler,
 	leadHandler *handlers.LeadHandler,
 	homeHandler *handlers.HomeHandler,
+	bannerHandler *handlers.BannerHandler,
 ) {
 
 	// Swagger documentation
@@ -108,9 +109,11 @@ func RegisterRoutes(
 		// Public Webhook Route
 		r.Post("/razorpay-webhook", paymentHandler.RazorpayWebhook)
 
-		// Public Promo & Lead Routes (no auth required)
+		// Public Promo, Lead & Banner Routes (no auth required)
 		r.Post("/promo/validate", promoHandler.ValidatePromo)
 		r.Post("/leads", leadHandler.CaptureLead)
+		r.Get("/banners", bannerHandler.ListActiveBanners)
+		r.Get("/banners/{slot}", bannerHandler.GetBannerBySlot)
 
 		// Protected Admin Routes
 		r.Group(func(r chi.Router) {
@@ -129,6 +132,14 @@ func RegisterRoutes(
 				r.Route("/orders", func(r chi.Router) {
 					r.Get("/", orderHandler.ListAllOrders)
 					r.Patch("/{id}/status", orderHandler.UpdateStatus)
+				})
+
+				// Admin Banners
+				r.Route("/banners", func(r chi.Router) {
+					r.Get("/", bannerHandler.AdminListBanners)
+					r.Post("/", bannerHandler.AdminCreateBanner)
+					r.Put("/{id}", bannerHandler.AdminUpdateBanner)
+					r.Delete("/{id}", bannerHandler.AdminDeleteBanner)
 				})
 			})
 		})
