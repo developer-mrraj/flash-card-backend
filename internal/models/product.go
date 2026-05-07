@@ -24,8 +24,9 @@ type Product struct {
 	OriginalPrice *int64         `gorm:"default:null"                json:"original_price,omitempty"`
 	Discount      string         `gorm:"type:varchar(50)"            json:"discount,omitempty"`
 	MainImage     string         `gorm:"type:varchar(500)"           json:"main_image"`
-	GalleryImages pq.StringArray `gorm:"type:text[]"                 json:"gallery_images"`
-	CardsCount    int            `gorm:"default:0"                   json:"cards_count"`
+	GalleryImages pq.StringArray    `gorm:"type:text[]"                 json:"gallery_images"`
+	CardsCount    int               `gorm:"default:0"                   json:"cards_count"`
+	Features      []byte            `gorm:"type:jsonb;default:'[]'"     json:"features"`
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 }
