@@ -15,6 +15,8 @@ type OrderRepository interface {
 	UpdateStatus(id uuid.UUID, status string) error
 	UpdatePaymentDetails(id uuid.UUID, rzpOrderID string, rzpPaymentID string, status string) error
 	FindByRazorpayOrderID(rzpOrderID string) (*models.Order, error)
+	LinkGuestOrdersByEmail(email string, userID uuid.UUID) error
+	LinkGuestOrdersByPhone(phone string, userID uuid.UUID) error
 }
 
 type orderRepository struct {
@@ -47,6 +49,18 @@ func (r *orderRepository) FindByUserID(userID uuid.UUID) ([]models.Order, error)
 	return orders, nil
 }
 
+func (r *orderRepository) LinkGuestOrdersByEmail(email string, userID uuid.UUID) error {
+	return r.db.Model(&models.Order{}).
+		Where("user_id IS NULL AND guest_email = ?", email).
+		Update("user_id", userID).Error
+}
+
+func (r *orderRepository) LinkGuestOrdersByPhone(phone string, userID uuid.UUID) error {
+	return r.db.Model(&models.Order{}).
+		Where("user_id IS NULL AND guest_phone = ?", phone).
+		Update("user_id", userID).Error
+}
+
 func (r *orderRepository) FindByIDAndUserID(id, userID uuid.UUID) (*models.Order, error) {
 	var order models.Order
 	if err := r.db.Preload("Items.Product").Where("id = ? AND user_id = ?", id, userID).First(&order).Error; err != nil {
@@ -65,7 +79,7 @@ func (r *orderRepository) FindAll() ([]models.Order, error) {
 
 func (r *orderRepository) FindByID(id uuid.UUID) (*models.Order, error) {
 	var order models.Order
-	if err := r.db.First(&order, id).Error; err != nil {
+	if err := r.db.Preload("Items.Product").First(&order, id).Error; err != nil {
 		return nil, err
 	}
 	return &order, nil

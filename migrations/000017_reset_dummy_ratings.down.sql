@@ -1,0 +1,2 @@
+-- No accurate down migration is possible without restoring exact historical data.
+-- Doing nothing.

@@ -58,7 +58,7 @@ func main() {
 	bannerRepo := repository.NewBannerRepository(db)
 
 	// 4. Initialize Services
-	authService := service.NewAuthService(userRepo, cfg)
+	authService := service.NewAuthService(userRepo, orderRepo, cfg)
 	productService := service.NewProductService(productRepo, reviewRepo)
 	paymentService := service.NewPaymentService(cfg, paymentRepo, orderRepo)
 	orderService := service.NewOrderService(orderRepo, productRepo, paymentService)

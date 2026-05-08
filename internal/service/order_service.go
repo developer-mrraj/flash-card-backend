@@ -12,8 +12,10 @@ import (
 
 type OrderService interface {
 	CreateOrder(userID uuid.UUID, req dto.CreateOrderRequest) (*dto.OrderResponse, error)
+	CreateGuestOrder(req dto.GuestOrderRequest) (*dto.OrderResponse, error)
 	GetMyOrders(userID uuid.UUID) ([]dto.OrderResponse, error)
 	GetMyOrder(userID, orderID uuid.UUID) (*dto.OrderResponse, error)
+	GetPublicOrder(orderID uuid.UUID) (*dto.OrderResponse, error)
 	GetAllOrders() ([]dto.OrderResponse, error)
 	UpdateOrderStatus(orderID uuid.UUID, req dto.UpdateOrderStatusRequest) error
 }
@@ -30,11 +32,14 @@ func NewOrderService(orderRepo repository.OrderRepository, productRepo repositor
 
 func mapToOrderResponse(o *models.Order) dto.OrderResponse {
 	res := dto.OrderResponse{
-		ID:              o.ID,
+		ID:              *o.ID,
 		UserID:          o.UserID,
 		TotalAmount:     o.TotalAmount,
 		Status:          o.Status,
 		RazorpayOrderID: o.RazorpayOrderID,
+		GuestName:       o.GuestName,
+		GuestEmail:      o.GuestEmail,
+		GuestPhone:      o.GuestPhone,
 		CreatedAt:       o.CreatedAt,
 		UpdatedAt:       o.UpdatedAt,
 	}
@@ -110,7 +115,7 @@ func (s *orderService) CreateOrder(userID uuid.UUID, req dto.CreateOrderRequest)
 	}
 
 	order := &models.Order{
-		UserID:      userID,
+		UserID:      &userID,
 		TotalAmount: totalAmount,
 		Status:      "pending",
 		Items:       orderItems,
@@ -122,15 +127,72 @@ func (s *orderService) CreateOrder(userID uuid.UUID, req dto.CreateOrderRequest)
 	}
 
 	// Generate Razorpay Order
-	receipt := order.ID.String() // Max length is 40 characters in Razorpay (UUID is 36)
+	receipt := (*order.ID).String() // Max length is 40 characters in Razorpay (UUID is 36)
 	rzpOrderID, rzpErr := s.paymentSvc.GenerateRazorpayOrder(order.TotalAmount, receipt)
 	if rzpErr != nil {
-		log.Printf("[Razorpay] WARN: Failed to create Razorpay order for order %s: %v", order.ID, rzpErr)
+		log.Printf("[Razorpay] WARN: Failed to create Razorpay order for order %s: %v", *order.ID, rzpErr)
 	} else if rzpOrderID != "" {
 		// Update the order in DB with Razorpay Order ID
-		s.orderRepo.UpdatePaymentDetails(order.ID, rzpOrderID, "", "pending")
+		s.orderRepo.UpdatePaymentDetails(*order.ID, rzpOrderID, "", "pending")
 		order.RazorpayOrderID = rzpOrderID
-		log.Printf("[Razorpay] Order created: %s for order %s", rzpOrderID, order.ID)
+		log.Printf("[Razorpay] Order created: %s for order %s", rzpOrderID, *order.ID)
+	}
+
+	res := mapToOrderResponse(order)
+	return &res, nil
+}
+
+func (s *orderService) CreateGuestOrder(req dto.GuestOrderRequest) (*dto.OrderResponse, error) {
+	var totalAmount int64
+	var orderItems []models.OrderItem
+	var productsToUpdate []models.Product
+
+	for _, itemReq := range req.Items {
+		product, err := s.productRepo.FindByID(itemReq.ProductID)
+		if err != nil {
+			return nil, errors.New("product not found")
+		}
+
+		if product.StockQuantity < itemReq.Quantity {
+			return nil, errors.New("not enough stock")
+		}
+
+		product.StockQuantity -= itemReq.Quantity
+		productsToUpdate = append(productsToUpdate, *product)
+
+		itemTotal := product.Price * int64(itemReq.Quantity)
+		totalAmount += itemTotal
+
+		orderItems = append(orderItems, models.OrderItem{
+			ProductID: product.ID,
+			Quantity:  itemReq.Quantity,
+			UnitPrice: product.Price,
+		})
+	}
+
+	order := &models.Order{
+		TotalAmount: totalAmount,
+		Status:      "pending",
+		GuestName:   req.GuestName,
+		GuestEmail:  req.GuestEmail,
+		GuestPhone:  req.GuestPhone,
+		Items:       orderItems,
+	}
+
+	err := s.orderRepo.CreateOrderTransaction(order, productsToUpdate)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate Razorpay Order
+	receipt := (*order.ID).String()
+	rzpOrderID, rzpErr := s.paymentSvc.GenerateRazorpayOrder(order.TotalAmount, receipt)
+	if rzpErr != nil {
+		log.Printf("[Razorpay] WARN: Failed to create Razorpay order for guest order %s: %v", *order.ID, rzpErr)
+	} else if rzpOrderID != "" {
+		s.orderRepo.UpdatePaymentDetails(*order.ID, rzpOrderID, "", "pending")
+		order.RazorpayOrderID = rzpOrderID
+		log.Printf("[Razorpay] Order created: %s for guest order %s", rzpOrderID, *order.ID)
 	}
 
 	res := mapToOrderResponse(order)
@@ -177,4 +239,15 @@ func (s *orderService) UpdateOrderStatus(orderID uuid.UUID, req dto.UpdateOrderS
 		return err
 	}
 	return nil
+}
+
+// GetPublicOrder fetches an order by ID without user ownership check.
+// Used by the order-success page so both guests and logged-in users can view their receipt.
+func (s *orderService) GetPublicOrder(orderID uuid.UUID) (*dto.OrderResponse, error) {
+	order, err := s.orderRepo.FindByID(orderID)
+	if err != nil {
+		return nil, errors.New("order not found")
+	}
+	res := mapToOrderResponse(order)
+	return &res, nil
 }

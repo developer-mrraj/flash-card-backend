@@ -18,12 +18,13 @@ type AuthService interface {
 }
 
 type authService struct {
-	repo repository.UserRepository
-	cfg  *config.Config
+	repo      repository.UserRepository
+	orderRepo repository.OrderRepository
+	cfg       *config.Config
 }
 
-func NewAuthService(repo repository.UserRepository, cfg *config.Config) AuthService {
-	return &authService{repo: repo, cfg: cfg}
+func NewAuthService(repo repository.UserRepository, orderRepo repository.OrderRepository, cfg *config.Config) AuthService {
+	return &authService{repo: repo, orderRepo: orderRepo, cfg: cfg}
 }
 
 func (s *authService) Signup(req dto.SignupRequest) (*dto.AuthResponse, error) {
@@ -48,6 +49,9 @@ func (s *authService) Signup(req dto.SignupRequest) (*dto.AuthResponse, error) {
 		return nil, err
 	}
 
+	// Link any previous guest orders
+	_ = s.orderRepo.LinkGuestOrdersByEmail(user.Email, user.ID)
+
 	return &dto.AuthResponse{Token: token, Message: "User created successfully"}, nil
 }
 
@@ -65,6 +69,9 @@ func (s *authService) Login(req dto.LoginRequest) (*dto.AuthResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Link any previous guest orders (in case they ordered as guest before logging in)
+	_ = s.orderRepo.LinkGuestOrdersByEmail(user.Email, user.ID)
 
 	return &dto.AuthResponse{Token: token}, nil
 }
