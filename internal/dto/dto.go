@@ -85,17 +85,27 @@ type CreateOrderRequest struct {
 	Items []OrderItemRequest `json:"items" binding:"required,dive"`
 }
 
+type GuestOrderRequest struct {
+	Items      []OrderItemRequest `json:"items" binding:"required,dive"`
+	GuestName  string             `json:"guest_name" binding:"required"`
+	GuestEmail string             `json:"guest_email" binding:"required,email"`
+	GuestPhone string             `json:"guest_phone" binding:"required"`
+}
+
 type UpdateOrderStatusRequest struct {
 	Status string `json:"status" binding:"required"`
 }
 
 type OrderResponse struct {
 	ID              uuid.UUID             `json:"id"`
-	UserID          uuid.UUID             `json:"user_id"`
+	UserID          *uuid.UUID            `json:"user_id,omitempty"`
 	User            *UserResponse         `json:"user,omitempty"`
 	TotalAmount     int64                 `json:"total_amount"`
 	Status          string                `json:"status"`
 	RazorpayOrderID string                `json:"razorpay_order_id,omitempty"`
+	GuestName       string                `json:"guest_name,omitempty"`
+	GuestEmail      string                `json:"guest_email,omitempty"`
+	GuestPhone      string                `json:"guest_phone,omitempty"`
 	Items           []OrderItemResponse   `json:"items"`
 	CreatedAt       time.Time             `json:"created_at"`
 	UpdatedAt       time.Time             `json:"updated_at"`

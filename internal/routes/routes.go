@@ -83,6 +83,10 @@ func RegisterRoutes(
 			r.Get("/{id}/reviews", productHandler.GetReviews)
 		})
 
+		// Public Orders Routes (Guest Checkout & Order Success Page)
+		r.Post("/orders/guest", orderHandler.PlaceGuestOrder)
+		r.Get("/orders/{id}/public", orderHandler.GetPublicOrder)
+
 		// Protected Customer Routes (Orders)
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RequireAuth(cfg))
@@ -95,8 +99,6 @@ func RegisterRoutes(
 
 			r.Post("/products/{id}/reviews", productHandler.AddReview)
 
-			r.Post("/verify-payment", paymentHandler.VerifyPayment)
-
 			// Address Routes
 			r.Route("/addresses", func(r chi.Router) {
 				r.Get("/", addressHandler.GetMyAddresses)
@@ -108,6 +110,7 @@ func RegisterRoutes(
 
 		// Public Webhook Route
 		r.Post("/razorpay-webhook", paymentHandler.RazorpayWebhook)
+		r.Post("/verify-payment", paymentHandler.VerifyPayment)
 
 		// Public Promo, Lead & Banner Routes (no auth required)
 		r.Post("/promo/validate", promoHandler.ValidatePromo)

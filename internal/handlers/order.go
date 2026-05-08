@@ -59,6 +59,63 @@ func (h *OrderHandler) Create(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+// PlaceGuestOrder godoc
+// @Summary Place a new order as guest
+// @Description Place a new order with items without authentication. Automatically deducts stock.
+// @Tags orders
+// @Accept  json
+// @Produce  json
+// @Param request body dto.GuestOrderRequest true "Guest Order Request"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /orders/guest [post]
+func (h *OrderHandler) PlaceGuestOrder(w http.ResponseWriter, r *http.Request) {
+	var req dto.GuestOrderRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || len(req.Items) == 0 {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	res, err := h.orderService.CreateGuestOrder(req)
+	if err != nil {
+		log.Printf("[OrderHandler] CreateGuestOrder error: %v", err)
+		http.Error(w, "Failed to create guest order: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(res)
+}
+
+// GetPublicOrder godoc
+// @Summary Get order by ID (public)
+// @Description Fetch order details by ID. Used by order-success page for both guests and authenticated users.
+// @Tags orders
+// @Produce json
+// @Param id path string true "Order ID"
+// @Success 200 {object} dto.OrderResponse
+// @Failure 404 {object} map[string]string
+// @Router /orders/{id}/public [get]
+func (h *OrderHandler) GetPublicOrder(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	orderID, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+
+	res, err := h.orderService.GetPublicOrder(orderID)
+	if err != nil {
+		http.Error(w, "Order not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+}
+
 // ListMyOrders godoc
 // @Summary Get user's orders
 // @Description Get a list of all orders placed by the authenticated user

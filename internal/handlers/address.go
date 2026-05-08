@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"backend/internal/middleware"
@@ -22,18 +23,25 @@ func NewAddressHandler(repo repository.AddressRepository) *AddressHandler {
 }
 
 type createAddressRequest struct {
-	FullName string `json:"full_name"`
-	Phone    string `json:"phone"`
-	Address  string `json:"address"`
-	City     string `json:"city"`
-	State    string `json:"state"`
-	Pincode  string `json:"pincode"`
+	FullName     string `json:"full_name"`
+	Phone        string `json:"phone"`
+	AddressLine1 string `json:"address_line1"`
+	AddressLine2 string `json:"address_line2"`
+	City         string `json:"city"`
+	State        string `json:"state"`
+	Pincode      string `json:"pincode"`
 }
 
 // getUserID extracts the authenticated user's UUID from the request context.
 func getUserIDFromCtx(r *http.Request) (uuid.UUID, bool) {
-	claims, ok := r.Context().Value(middleware.UserContextKey).(*utils.JWTClaims)
+	val := r.Context().Value(middleware.UserContextKey)
+	if val == nil {
+		log.Printf("getUserIDFromCtx: UserContextKey not found in context")
+		return uuid.Nil, false
+	}
+	claims, ok := val.(*utils.JWTClaims)
 	if !ok || claims == nil {
+		log.Printf("getUserIDFromCtx: Failed to type assert context value to *utils.JWTClaims. Got: %T", val)
 		return uuid.Nil, false
 	}
 	return claims.UserID, true
@@ -89,13 +97,14 @@ func (h *AddressHandler) AddAddress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	address := &models.UserAddress{
-		UserID:   userID,
-		FullName: req.FullName,
-		Phone:    req.Phone,
-		Address:  req.Address,
-		City:     req.City,
-		State:    req.State,
-		Pincode:  req.Pincode,
+		UserID:       userID,
+		FullName:     req.FullName,
+		Phone:        req.Phone,
+		AddressLine1: req.AddressLine1,
+		AddressLine2: req.AddressLine2,
+		City:         req.City,
+		State:        req.State,
+		Pincode:      req.Pincode,
 	}
 
 	if err := h.repo.Create(address); err != nil {
