@@ -99,7 +99,7 @@ func (s *paymentService) ProcessPaymentSuccess(paymentID, orderID string, amount
 
 	// 3. Insert Payment History
 	history := &models.PaymentHistory{
-		OrderID:           order.ID,
+		OrderID:           *order.ID,
 		RazorpayOrderID:   orderID,
 		RazorpayPaymentID: paymentID,
 		Amount:            amount,
@@ -110,7 +110,7 @@ func (s *paymentService) ProcessPaymentSuccess(paymentID, orderID string, amount
 	}
 
 	// 4. Update Order Status
-	if err := s.orderRepo.UpdatePaymentDetails(order.ID, orderID, paymentID, "paid"); err != nil {
+	if err := s.orderRepo.UpdatePaymentDetails(*order.ID, orderID, paymentID, "paid"); err != nil {
 		return err
 	}
 
